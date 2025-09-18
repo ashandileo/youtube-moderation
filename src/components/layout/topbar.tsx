@@ -27,12 +27,12 @@ export function Topbar() {
         <div className="flex flex-1 items-center justify-between space-x-4">
           {/* Search */}
           <div className="flex items-center space-x-4">
-            <div className="relative max-w-sm">
+            <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search comments, videos..."
-                className="pl-8"
+                className="pl-8 w-64"
               />
             </div>
           </div>
