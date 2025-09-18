@@ -35,6 +35,7 @@ import { type KPIData, type ActivityLog } from "@/lib/types";
 import Link from "next/link";
 
 export default function DashboardPage() {
+  console.log("masuk");
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);

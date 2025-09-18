@@ -1,6 +1,7 @@
 "use client";
-import { useRouter } from "next/navigation";
+
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -15,49 +16,44 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Youtube, Mail, Lock, Loader2 } from "lucide-react";
+import { Youtube, Mail, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 
-export default function LoginPage() {
-  const router = useRouter();
-
+export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { signIn, loading } = useAuth();
+  const router = useRouter();
+  const { signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
+    if (!fullName.trim()) {
+      setError("Nama lengkap harus diisi");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Sign in using Supabase directly
-      const { error } = await signIn(email, password);
+      const { error } = await signUp(email, password, fullName);
       if (error) {
-        setError(error.message || "Login gagal");
+        setError(error.message || "Registrasi gagal");
       } else {
-        toast.success("Login berhasil!");
-        router.refresh();
-        router.push("/auth/callback");
+        toast.success("Registrasi berhasil! Silakan login.");
+        router.push("/login");
       }
     } catch (error) {
-      setError("Terjadi kesalahan saat login");
-      console.error("Login error:", error);
+      setError("Terjadi kesalahan saat registrasi");
+      console.error("Sign up error:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Show loading state while checking authentication
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <Card className="w-full max-w-md">
@@ -65,20 +61,35 @@ export default function LoginPage() {
         <div className="flex items-center justify-center mb-4">
           <Youtube className="h-12 w-12 text-red-600" />
         </div>
-        <CardTitle className="text-2xl">Masuk ke YT Moderation</CardTitle>
+        <CardTitle className="text-2xl">Daftar YT Moderation</CardTitle>
         <CardDescription>
-          Sistem moderasi komentar YouTube berbasis AI
+          Buat akun untuk menggunakan sistem moderasi komentar YouTube
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="fullName">Nama Lengkap</Label>
+            <div className="relative">
+              <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="fullName"
+                placeholder="Masukkan nama lengkap"
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="pl-10"
+                required
+              />
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 id="email"
-                placeholder="admin2@example.com atau annotator@example.com"
+                placeholder="nama@example.com"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -99,8 +110,12 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-10"
                 required
+                minLength={6}
               />
             </div>
+            <p className="text-xs text-muted-foreground">
+              Password minimal 6 karakter
+            </p>
           </div>
           {error && (
             <Alert variant="destructive">
@@ -108,22 +123,22 @@ export default function LoginPage() {
             </Alert>
           )}
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Masuk..." : "Masuk"}
+            {isLoading ? "Mendaftar..." : "Daftar"}
           </Button>
         </form>
       </CardContent>
       <CardFooter className="flex flex-col space-y-4">
         <div className="text-sm text-center">
-          Belum punya akun?{" "}
+          Sudah punya akun?{" "}
           <Link
-            href="/signup"
+            href="/login"
             className="text-primary underline underline-offset-4 hover:no-underline"
           >
-            Daftar di sini
+            Masuk di sini
           </Link>
         </div>
         <p className="text-xs text-muted-foreground text-center w-full">
-          Dengan masuk, Anda menyetujui{" "}
+          Dengan mendaftar, Anda menyetujui{" "}
           <span className="underline underline-offset-4 hover:text-primary cursor-pointer">
             syarat dan ketentuan
           </span>{" "}

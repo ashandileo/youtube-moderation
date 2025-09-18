@@ -1,42 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    // Mock authentication - in real app, validate against database
-    if (email === "admin@example.com" && password === "admin123") {
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: "1",
-          email: "admin@example.com",
-          name: "Admin User",
-          role: "admin",
-        },
-        token: "mock_jwt_token_here",
+    // For development, create test users if they don't exist
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (supabaseServiceRoleKey && (email === "admin@example.com" || email === "annotator@example.com")) {
+      // Create admin client for user management
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
       });
+
+      // Check if user exists
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const userExists = existingUsers?.users.some(u => u.email === email);
+
+      // Create user if doesn't exist
+      if (!userExists) {
+        const { error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: {
+            full_name: email === "admin@example.com" ? "Admin User" : "Annotator User",
+            role: email === "admin@example.com" ? "admin" : "annotator"
+          }
+        });
+
+        if (createError) {
+          console.error("Error creating user:", createError);
+        }
+      }
     }
 
-    if (email === "annotator@example.com" && password === "annotator123") {
-      return NextResponse.json({
-        success: true,
-        user: {
-          id: "2",
-          email: "annotator@example.com",
-          name: "Annotator User",
-          role: "annotator",
-        },
-        token: "mock_jwt_token_here",
-      });
-    }
+    return NextResponse.json({
+      success: true,
+      message: "User setup completed"
+    });
 
-    return NextResponse.json(
-      { success: false, message: "Invalid credentials" },
-      { status: 401 }
-    );
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("Login setup error:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
       { status: 500 }
