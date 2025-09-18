@@ -13,6 +13,17 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -30,6 +41,8 @@ import {
   User,
   Play,
   ExternalLink,
+  Plus,
+  Loader2,
 } from "lucide-react";
 import { mockAPI } from "@/lib/mock";
 import { type Video as VideoType, type Comment } from "@/lib/types";
@@ -42,6 +55,9 @@ export default function VideosPage() {
   const [videoComments, setVideoComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [isAddVideoModalOpen, setIsAddVideoModalOpen] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [isAddingVideo, setIsAddingVideo] = useState(false);
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -70,6 +86,51 @@ export default function VideosPage() {
       toast.error("Gagal memuat komentar video");
     } finally {
       setIsLoadingComments(false);
+    }
+  };
+
+  const handleAddVideo = async () => {
+    if (!youtubeUrl.trim()) {
+      toast.error("Masukkan URL YouTube video");
+      return;
+    }
+
+    // Validate YouTube URL
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+    if (!youtubeRegex.test(youtubeUrl)) {
+      toast.error("URL tidak valid. Masukkan URL YouTube yang benar");
+      return;
+    }
+
+    setIsAddingVideo(true);
+    try {
+      // Simulate adding video - in real app this would call an API
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Mock response for demonstration
+      const newVideo: VideoType = {
+        id: `video_${Date.now()}`,
+        title: "Video Baru dari YouTube",
+        description: "Video yang ditambahkan pengguna",
+        thumbnail:
+          "https://via.placeholder.com/320x180/f3f4f6/9ca3af?text=New+Video",
+        channelTitle: "Channel YouTube",
+        publishedAt: new Date().toISOString(),
+        lastSync: new Date().toISOString(),
+        totalComments: 0,
+        labeledComments: 0,
+        youtubeUrl: youtubeUrl,
+      };
+
+      setVideos((prev) => [newVideo, ...prev]);
+      setYoutubeUrl("");
+      setIsAddVideoModalOpen(false);
+      toast.success("Video berhasil ditambahkan!");
+    } catch (error) {
+      console.error("Error adding video:", error);
+      toast.error("Gagal menambahkan video");
+    } finally {
+      setIsAddingVideo(false);
     }
   };
 
@@ -109,10 +170,69 @@ export default function VideosPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Video Explorer"
-        description="Jelajahi video YouTube dan kelola komentar per video"
-      />
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title="Video Explorer"
+          description="Jelajahi video YouTube dan kelola komentar per video"
+        />
+        <Dialog
+          open={isAddVideoModalOpen}
+          onOpenChange={setIsAddVideoModalOpen}
+        >
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Tambah Video
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Tambah Video YouTube</DialogTitle>
+              <DialogDescription>
+                Masukkan URL video YouTube yang ingin ditambahkan untuk
+                dianalisis.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="youtube-url">URL YouTube Video</Label>
+                <Input
+                  id="youtube-url"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  disabled={isAddingVideo}
+                />
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <p>Contoh format URL yang didukung:</p>
+                <ul className="list-disc list-inside space-y-1 mt-2">
+                  <li>https://www.youtube.com/watch?v=VIDEO_ID</li>
+                  <li>https://youtu.be/VIDEO_ID</li>
+                </ul>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsAddVideoModalOpen(false)}
+                disabled={isAddingVideo}
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={handleAddVideo}
+                disabled={isAddingVideo || !youtubeUrl.trim()}
+              >
+                {isAddingVideo && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {isAddingVideo ? "Menambahkan..." : "Tambah Video"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {/* Stats Overview */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -197,7 +317,10 @@ export default function VideosPage() {
           return (
             <Drawer key={video.id}>
               <DrawerTrigger asChild>
-                <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                <Card
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => handleVideoSelect(video)}
+                >
                   <CardContent className="p-4">
                     {/* Thumbnail */}
                     <div className="relative mb-4">

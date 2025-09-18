@@ -41,6 +41,7 @@ export interface Video {
   channelTitle: string;
   description?: string;
   publishedAt: string;
+  youtubeUrl?: string;
 }
 
 export interface KPIData {
